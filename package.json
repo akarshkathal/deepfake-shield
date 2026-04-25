@@ -1,0 +1,21 @@
+{
+  "name": "deepfake-shield",
+  "version": "1.0.0",
+  "description": "Chrome extension that detects AI-generated/deepfake images on Instagram using a local ONNX model. No data sent anywhere.",
+  "private": true,
+  "type": "module", 
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.3.3",
+    "onnxruntime-web": "^1.21.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vite": "^5.4.19",
+    "vite-plugin-static-copy": "^1.0.6"
+  }
+}

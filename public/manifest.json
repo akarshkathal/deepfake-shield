@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "DeepFake Shield",
+  "version": "1.0.0",
+  "description": "Detects AI-generated and deepfake images on Instagram. Runs 100% locally — no data ever leaves your browser.",
+  "permissions": [
+    "storage",
+    "scripting",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "https://www.instagram.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["*.wasm", "*.mjs", "detector.worker.js"],
+      "matches": ["https://www.instagram.com/*"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}

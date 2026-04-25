@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable", "WebWorker"],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["chrome"]
+  },
+  "include": ["src/**/*.ts"]
+}

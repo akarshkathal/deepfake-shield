@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeepFake Shield</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <span class="logo-icon">🛡</span>
+        <div>
+          <h1>DeepFake Shield</h1>
+          <p class="tagline">Running 100% locally · No data sent anywhere</p>
+        </div>
+      </div>
+      <label class="toggle" title="Enable or disable scanning">
+        <input type="checkbox" id="enabled-toggle" />
+        <span class="slider"></span>
+      </label>
+    </header>
+
+    <div class="model-status" id="model-status">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">Checking model...</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value" id="scan-count">—</span>
+        <span class="stat-label">Scanned</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value flagged" id="flagged-count">—</span>
+        <span class="stat-label">Flagged AI</span>
+      </div>
+    </div>
+
+    <div class="settings">
+      <label class="setting-row">
+        <div>
+          <span class="setting-label">Detection threshold</span>
+          <span class="setting-desc">Flag images above this confidence</span>
+        </div>
+        <div class="threshold-control">
+          <input type="range" id="threshold" min="50" max="95" step="5" />
+          <span id="threshold-value">75%</span>
+        </div>
+      </label>
+
+      <label class="setting-row">
+        <div>
+          <span class="setting-label">Blur detected images</span>
+          <span class="setting-desc">Blurs flagged AI content in feed</span>
+        </div>
+        <label class="toggle small">
+          <input type="checkbox" id="blur-toggle" />
+          <span class="slider"></span>
+        </label>
+      </label>
+    </div>
+
+    <footer>
+      <button id="reset-stats">Reset stats</button>
+      <a href="https://github.com/yourusername/deepfake-shield" target="_blank" rel="noopener">GitHub ↗</a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
