@@ -1,6 +1,6 @@
-/* content.css — DeepFake Shield badge styles
-   These are injected into Instagram alongside content.js
-   Uses high specificity + !important to survive Instagram's CSS resets */
+/* content.css — DeepFake Shield badge styles (v0.2)
+   These are injected into Instagram alongside content.js.
+   Uses high specificity + !important to survive Instagram's CSS resets. */
 
 .dfs-badge {
   position: absolute !important;
@@ -17,7 +17,8 @@
   font-weight: 600 !important;
   letter-spacing: 0.3px !important;
   line-height: 1 !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
+  cursor: help !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
   animation: dfs-fadein 0.2s ease !important;
@@ -29,20 +30,41 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Scanning state */
+/* Scanning — neutral dark */
 .dfs-badge[data-state="scanning"] {
   background: rgba(30, 30, 30, 0.75) !important;
   color: #fff !important;
 }
 
-/* Deepfake detected */
-.dfs-badge[data-state="deepfake"] {
+/* Verified AI via C2PA — strong red with shield emoji.
+   This is our most confident "AI" state. */
+.dfs-badge[data-state="verified-ai"] {
+  background: rgba(190, 30, 60, 0.92) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+}
+
+/* Verified authentic via C2PA — green, subtle */
+.dfs-badge[data-state="verified-authentic"] {
+  background: rgba(16, 130, 60, 0.88) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+}
+
+/* Likely AI by ML — red */
+.dfs-badge[data-state="ai"] {
   background: rgba(220, 38, 38, 0.88) !important;
   color: #fff !important;
 }
 
-/* Authentic */
-.dfs-badge[data-state="real"] {
+/* Uncertain — amber/orange. The honest "we don't know" state. */
+.dfs-badge[data-state="uncertain"] {
+  background: rgba(217, 119, 6, 0.88) !important;
+  color: #fff !important;
+}
+
+/* Likely Authentic by ML — green */
+.dfs-badge[data-state="authentic"] {
   background: rgba(22, 163, 74, 0.85) !important;
   color: #fff !important;
 }
@@ -53,8 +75,9 @@
 
 .dfs-badge em {
   font-style: normal !important;
-  opacity: 0.8 !important;
+  opacity: 0.85 !important;
   font-size: 10px !important;
+  margin-left: 2px !important;
 }
 
 /* Spinner for scanning state */
