@@ -4,17 +4,22 @@ A Chrome extension that detects AI-generated and deepfake images on Instagram �
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Manifest](https://img.shields.io/badge/manifest-v3-green.svg)
-![Status](https://img.shields.io/badge/status-v0.1%20alpha-orange.svg)
+![Status](https://img.shields.io/badge/status-v0.2%20beta-yellow.svg)
 
-> ⚠️ **Honest disclosure:** v0.1 is best at detecting face-swap deepfakes. It does **not** reliably catch Midjourney/FLUX/DALL-E art. Read the [Limitations](#known-limitations) section before installing.
+> 🆕 **v0.2** adds Content Credentials (C2PA) detection — a deterministic signal that catches AI from DALL·E, Adobe Firefly, Photoshop AI, Meta AI, and others when present. The extension now shows three confidence states (Likely AI / Uncertain / Likely Authentic) instead of binary labels. The underlying ML model was upgraded to the mature v2 of the same family.
+>
+> ⚠️ **Honest disclosure:** the ML side is still best at face-swap deepfakes. It does **not** reliably catch Midjourney/FLUX art *unless* those images carry C2PA. Read the [Limitations](#known-limitations) section before installing.
 
 ## How it works
 
 1. Content script observes Instagram's feed via `MutationObserver` and `IntersectionObserver`
 2. Each visible image URL is forwarded to a background service worker
-3. Service worker routes the request to an Offscreen Document (which has DOM/Worker access)
-4. The Offscreen Document runs a Web Worker hosting an ONNX deepfake detection model via [Transformers.js](https://github.com/huggingface/transformers.js)
-5. Results stream back through the chain → a colored badge is overlaid on the image
+3. Service worker routes the request to an Offscreen Document
+4. The Offscreen Document runs **two checks in parallel**:
+   - **Content Credentials (C2PA)** — scans the image binary for C2PA manifests. Modern AI tools (DALL·E, Firefly, Photoshop AI, Meta AI) embed these. When present, we have a deterministic answer.
+   - **ML inference** — a Vision Transformer ONNX model classifies the image as real vs deepfake.
+5. Results combine: **C2PA wins when present** (deterministic), ML score is the fallback (probabilistic). The ML score is interpreted as a three-state outcome — Likely AI / Uncertain / Likely Authentic.
+6. A colored badge is overlaid on the image with the verdict and confidence.
 
 The model runs **100% on your machine**. The only network request is the initial download of the model from HuggingFace (~87MB, cached forever).
 
@@ -31,15 +36,20 @@ Instagram tab
     │       │ chrome.runtime.sendMessage({...target: 'offscreen'})
     │       ▼
     ├── offscreen.js (Offscreen Document - extension origin)
-    │       │ new Worker('detector.worker.js')
+    │       ├── checkC2PA(imageUrl)              ◄── runs in parallel
+    │       │       (lightweight binary scan)
+    │       │
+    │       └── new Worker('detector.worker.js')
+    │               │ @huggingface/transformers pipeline()
+    │               ▼
+    │           { label, score, deepfakeScore }
+    │
+    │       ▼ combine both signals
+    │   { mlLabel, mlScore, mlDeepfakeScore, c2pa: {...} }
+    │       │ chrome.runtime.sendResponse
     │       ▼
-    └── detector.worker.js (Web Worker - ONNX inference)
-            │ @huggingface/transformers pipeline()
-            ▼
-        { label: 'Deepfake' | 'Real', score: 0.87 }
-            │ chrome.runtime.sendResponse
-            ▼
-        Badge overlaid on image in Instagram feed
+    └── Badge overlaid on image — C2PA wins when present, else ML score
+        with a three-state output (AI / Uncertain / Authentic)
 ```
 
 ### Why so many layers?
@@ -93,8 +103,9 @@ deepfake-shield/
 ├── src/
 │   ├── background.ts         MV3 service worker — routes messages, manages offscreen doc
 │   ├── content.ts            Injected into instagram.com — observes feed, renders badges
-│   ├── offscreen.ts          Hidden HTML doc — hosts the Web Worker
+│   ├── offscreen.ts          Hidden HTML doc — runs ML + C2PA in parallel, combines results
 │   ├── detector.worker.ts    Runs the ONNX model via transformers.js
+│   ├── c2pa.ts               Content Credentials (C2PA) detector — no external library
 │   └── popup.ts              Settings UI logic
 ├── public/
 │   ├── manifest.json         MV3 manifest with offscreen + scripting permissions
@@ -120,32 +131,42 @@ Stats (scanned / flagged) update live as you scroll.
 
 ## Known limitations
 
-This is alpha software. Be aware of what works and what doesn't:
+This is beta software. Be honest about what works and what doesn't:
 
-**✅ Works reasonably well on:**
-- Face-swap deepfakes (the original GAN-style ones)
-- Photorealistic AI-generated faces (StyleGAN, etc.)
+**✅ Highest confidence (Content Credentials path):**
+Deterministic detection when the image carries a C2PA manifest. Currently caught:
+- DALL·E 3 (OpenAI)
+- Adobe Firefly
+- Photoshop Generative Fill / Generative Expand
+- Meta AI image generations
+- Anything signed by a tool that embeds C2PA
+
+**✅ Works reasonably well via the ML model:**
+- Face-swap deepfakes (GAN-era)
+- Photorealistic AI-generated faces (StyleGAN family)
 - Some older AI image generators
 
-**❌ Does NOT work well on:**
-- **Midjourney** images (v5, v6, v7)
+**❌ Still struggles to detect (when C2PA is absent):**
+- **Midjourney** images (v6 through v8.1) that don't carry C2PA
 - **FLUX** generated images
-- **DALL-E 3** outputs
+- **Stable Diffusion** outputs (community-generated)
 - **Stylized AI art** (illustrations, fantasy scenes, anime)
-- Any non-face-focused AI content
-- Heavily compressed or filtered images
-- Videos (v0.1 is image-only)
+- Heavily compressed images that stripped metadata
+- Videos (v0.2 is image-only)
 
-**Why these limitations?** The current model was trained primarily on GAN-based face deepfakes. It hasn't seen modern diffusion-model output during training, so it can't reliably detect it. v0.2 will address this by training a custom model on the OpenFake/GenImage datasets which include Midjourney, FLUX, DALL-E 3, and Stable Diffusion content.
+**Why these limitations?** The ML model is trained primarily on GAN-based face deepfakes. It hasn't seen modern diffusion-model output during training, so it can't reliably detect it. The C2PA layer fills part of this gap — but only when the source tool embedded credentials. Many users save and re-share AI images, which often strips both EXIF and C2PA metadata, leaving us with only the (limited) ML signal.
 
-**Recommendation:** Treat positive flags as useful signals, but don't rely on negative results to mean "definitely real." Use the 85%+ threshold to reduce false positives.
+**v0.3 plan:** train a custom model on the OpenFake/GenImage datasets which include Midjourney, FLUX, DALL·E 3, and Stable Diffusion outputs. Ensemble it with the current model.
+
+**Recommendation:** treat **Verified AI** badges as definitive. Treat **Likely AI** as a useful signal worth a second look. Treat **Uncertain** as exactly that. Don't rely on **Likely Authentic** to mean "definitely real" — absence of evidence is not evidence of absence.
 
 ## Roadmap
 
 - [x] **v0.1** — face-swap deepfake detection on Instagram
-- [ ] **v0.2** — custom-trained model for Midjourney/FLUX/DALL-E detection
-- [ ] **v0.3** — video frame analysis (Reels)
-- [ ] **v0.4** — TikTok and Twitter/X support
+- [x] **v0.2** — Content Credentials (C2PA) detection, three-state confidence UX, mature v2 ML model
+- [ ] **v0.3** — custom-trained model for Midjourney/FLUX/DALL-E detection (OpenFake dataset)
+- [ ] **v0.4** — video frame analysis (Reels)
+- [ ] **v0.5** — TikTok and Twitter/X support
 - [ ] **v1.0** — Chrome Web Store release
 - [ ] **v1.1** — Firefox port
 

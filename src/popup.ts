@@ -1,20 +1,19 @@
 /**
- * popup.ts — DeepFake Shield popup logic
+ * popup.ts — DeepFake Shield popup logic (v0.2)
  *
- * Reads settings from chrome.storage.local and shows live stats.
- * Model status is also stored in chrome.storage.local by the content script
- * (which owns the worker), so the popup just reads from there.
+ * v0.2: clarifies model status text and reflects that detection now
+ * includes Content Credentials (C2PA), not just the ML model.
  */
 
-const enabledToggle = document.getElementById("enabled-toggle") as HTMLInputElement;
-const blurToggle    = document.getElementById("blur-toggle") as HTMLInputElement;
-const thresholdSlider = document.getElementById("threshold") as HTMLInputElement;
-const thresholdValue  = document.getElementById("threshold-value") as HTMLSpanElement;
-const scanCount       = document.getElementById("scan-count") as HTMLSpanElement;
-const flaggedCount    = document.getElementById("flagged-count") as HTMLSpanElement;
-const statusDot       = document.getElementById("status-dot") as HTMLSpanElement;
-const statusText      = document.getElementById("status-text") as HTMLSpanElement;
-const resetBtn        = document.getElementById("reset-stats") as HTMLButtonElement;
+const enabledToggle    = document.getElementById("enabled-toggle") as HTMLInputElement;
+const blurToggle       = document.getElementById("blur-toggle") as HTMLInputElement;
+const thresholdSlider  = document.getElementById("threshold") as HTMLInputElement;
+const thresholdValue   = document.getElementById("threshold-value") as HTMLSpanElement;
+const scanCount        = document.getElementById("scan-count") as HTMLSpanElement;
+const flaggedCount     = document.getElementById("flagged-count") as HTMLSpanElement;
+const statusDot        = document.getElementById("status-dot") as HTMLSpanElement;
+const statusText       = document.getElementById("status-text") as HTMLSpanElement;
+const resetBtn         = document.getElementById("reset-stats") as HTMLButtonElement;
 
 // ---- Load initial values --------------------------------------------------
 
@@ -37,7 +36,7 @@ chrome.storage.local.get(
 
 function updateStatus(status: string) {
   if (status === "ready") {
-    setStatus("ready", "Model ready · 92% accuracy");
+    setStatus("ready", "Detector ready · ML + Content Credentials");
   } else if (status === "loading") {
     setStatus("loading", "Downloading model (~87MB, first time only)...");
   } else if (status === "error") {
